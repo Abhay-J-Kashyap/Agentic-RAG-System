@@ -1,6 +1,6 @@
 import os
 import config
-import pymupdf.layout
+import pymupdf
 import pymupdf4llm
 from pathlib import Path
 import glob
