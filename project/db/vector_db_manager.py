@@ -1,6 +1,6 @@
 import os
 import config
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_qdrant import QdrantVectorStore, FastEmbedSparse, RetrievalMode
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
@@ -27,8 +27,7 @@ class VectorDbManager:
             print(f"Connecting to Local Qdrant at: {config.QDRANT_DB_PATH}")
             self.__client = QdrantClient(path=config.QDRANT_DB_PATH)
 
-        self.__dense_embeddings = HuggingFaceEmbeddings(model_name=config.DENSE_MODEL)
-        self.__sparse_embeddings = FastEmbedSparse(model_name=config.SPARSE_MODEL)
+        self.__dense_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GOOGLE_API_KEY"))
 
     def create_collection(self, collection_name):
         if not self.__client.collection_exists(collection_name):
