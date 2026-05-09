@@ -14,4 +14,3 @@ __pycache__/
 qdrant_db/
 
 # --- Make sure parent_store is NOT here! ---
-# parent_store/  <-- Delete this line or put a # in front of it
