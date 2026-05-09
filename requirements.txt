@@ -10,7 +10,7 @@ langchain-core==1.3.3
 langchain-google-genai
 langchain-qdrant==1.1.0
 langchain-text-splitters==1.1.0
-tiktoken>-0.7.0
+tiktoken>=0.7.0
 
 # --- Graph & Logic ---
 langgraph==1.0.5
