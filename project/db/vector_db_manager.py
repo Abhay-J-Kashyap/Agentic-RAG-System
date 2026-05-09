@@ -1,3 +1,4 @@
+import os
 import config
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore, FastEmbedSparse, RetrievalMode
@@ -8,18 +9,41 @@ class VectorDbManager:
     __client: QdrantClient
     __dense_embeddings: HuggingFaceEmbeddings
     __sparse_embeddings: FastEmbedSparse
+
     def __init__(self):
-        self.__client = QdrantClient(path=config.QDRANT_DB_PATH)
+        # 1. Check for Cloud Environment Variables
+        qdrant_url = os.getenv("QDRANT_URL")
+        qdrant_api_key = os.getenv("QDRANT_API_KEY")
+
+        if qdrant_url and qdrant_api_key:
+            # Connect to Qdrant Cloud
+            print("Connecting to Qdrant Cloud...")
+            self.__client = QdrantClient(
+                url=qdrant_url, 
+                api_key=qdrant_api_key
+            )
+        else:
+            # Fallback to Local Storage (using the path from your config)
+            print(f"Connecting to Local Qdrant at: {config.QDRANT_DB_PATH}")
+            self.__client = QdrantClient(path=config.QDRANT_DB_PATH)
+
         self.__dense_embeddings = HuggingFaceEmbeddings(model_name=config.DENSE_MODEL)
         self.__sparse_embeddings = FastEmbedSparse(model_name=config.SPARSE_MODEL)
 
     def create_collection(self, collection_name):
         if not self.__client.collection_exists(collection_name):
             print(f"Creating collection: {collection_name}...")
+            
+            # Hybrid search setup: Dense + Sparse
             self.__client.create_collection(
                 collection_name=collection_name,
-                vectors_config=qmodels.VectorParams(size=len(self.__dense_embeddings.embed_query("test")), distance=qmodels.Distance.COSINE),
-                sparse_vectors_config={config.SPARSE_VECTOR_NAME: qmodels.SparseVectorParams()},
+                vectors_config=qmodels.VectorParams(
+                    size=len(self.__dense_embeddings.embed_query("test")), 
+                    distance=qmodels.Distance.COSINE
+                ),
+                sparse_vectors_config={
+                    config.SPARSE_VECTOR_NAME: qmodels.SparseVectorParams()
+                },
             )
             print(f"✓ Collection created: {collection_name}")
         else:
@@ -28,7 +52,7 @@ class VectorDbManager:
     def delete_collection(self, collection_name):
         try:
             if self.__client.collection_exists(collection_name):
-                print(f"Removing existing Qdrant collection: {collection_name}")
+                print(f"Removing Qdrant collection: {collection_name}")
                 self.__client.delete_collection(collection_name)
         except Exception as e:
             print(f"Warning: could not delete collection {collection_name}: {e}")
