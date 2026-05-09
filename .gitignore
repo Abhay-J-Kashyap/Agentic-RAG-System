@@ -1,9 +1,17 @@
-.DS_Store
-qdrant_db/
-markdown/
-markdown_docs/
-parent_store/
-docs/
-__pycache__/
-.vscode/
+# Environments
+venv/
+.venv/
+env/
+
+# Secrets
 .env
+
+# Python Caches
+__pycache__/
+*.pyc
+
+# Local Vector DB
+qdrant_db/
+
+# --- Make sure parent_store is NOT here! ---
+# parent_store/  <-- Delete this line or put a # in front of it

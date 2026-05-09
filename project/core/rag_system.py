@@ -1,5 +1,6 @@
 import uuid
-from langchain_openai import ChatOpenAI
+import os
+from langchain_google_genai import ChatGoogleGenerativeAI
 import config
 from db.vector_db_manager import VectorDbManager
 from db.parent_store_manager import ParentStoreManager
@@ -24,12 +25,11 @@ class RAGSystem:
         collection = self.vector_db.get_collection(self.collection_name)
         
         # Main LLM running via LM Studio
-        llm = ChatOpenAI(
-            base_url="http://localhost:1234/v1",
-            api_key="local",
-            model='qwen2.5-7b-instruct',
-            streaming=True, # <--- ADDED THIS TO FIX THE UI STREAMING
-            timeout=600 
+        llm = ChatGoogleGenerativeAI(
+            model="gemini-2.5-flash",
+            temperature=0, # Keep at 0 for strict factual legal retrieval
+            google_api_key="AIzaSyADHYfGCPlhIPDNQo3VbaJLBY4cdezHemg", # Make sure you set this in your environment/ .env file!
+            streaming=True # UI Streaming remains fully supported!
         )
         
         tools = ToolFactory(collection).create_tools()

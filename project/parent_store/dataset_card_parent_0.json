@@ -1,0 +1,7 @@
+{
+  "page_content": "```\n\"tags\": [\n```  \n```\n\"law\",\n```  \n```\n\"legal\",\n```  \n```\n\"India\",\n```  \n```\n\"NLP\",\n```  \n```\n\"question-answering\",\n```  \n```\n\"fine-tuning\",\n```  \n```\n\"dataset\"\n```  \n```\n],\n\"license\": \"cc-by-sa-4.0\",\n\"datasets\": {\n\"original_dataset\": \"akshatgupta7/llm-fine-tuning-dataset-of-indian-legal-texts\"\n},\n\"language\": [\n\"en\"\n],\n\"task_categories\": [\n\"text-generation\",\n\"text-classification\",\n\"question-answering\"\n],\n\"pretty_name\": \"Indian Legal QA Dataset\",\n\"dataset_info\": {\n\"author\": \"Akshat Gupta\",\n```  \n```\n\"maintainer\": \"Techmaestro369 (techmaestro369@gmail.com)\",\n```  \n```\n\"source\":\n\"https://www.kaggle.com/datasets/akshatgupta7/llm-fine-tuning-dataset-of-indian-legal-te\nxts\",\n```  \n```\n\"description\": \"This dataset comprises curated question-answer pairs derived\nfrom Indian law, including IPC, CRPC, and the Indian Constitution. It is intended for\nfine-tuning LLMs for Indian legal applications.\"\n```  \n```\n}\n}\n```  \n--- end of page.page_number=1 ---",
+  "metadata": {
+    "source": "dataset_card.pdf",
+    "parent_id": "dataset_card_parent_0"
+  }
+}
