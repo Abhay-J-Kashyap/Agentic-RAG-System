@@ -1,47 +1,68 @@
+import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from core.rag_system import RAGSystem
 
-# 1. Initialize FastAPI app
+# --- LIFESPAN MANAGEMENT ---
+# This ensures heavy models load properly without blocking the port bind
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # This runs ON STARTUP
+    print("🚀 Initializing Agentic RAG System...")
+    try:
+        # We attach 'rag' to app.state so it's accessible in routes
+        app.state.rag = RAGSystem()
+        app.state.rag.initialize()
+        print("✅ RAG System Ready!")
+    except Exception as e:
+        print(f"❌ Critical Initialization Error: {e}")
+    
+    yield
+    # This runs ON SHUTDOWN
+    print("Shutting down...")
+
+# 1. Initialize FastAPI app with Lifespan
 app = FastAPI(
     title="Agentic RAG Legal API",
     description="Backend API for Indian Legal Document Retrieval",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
-# 2. Configure CORS (Crucial for connecting a frontend website later)
+# 2. Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, replace "*" with your actual frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 3. Initialize the LangGraph RAG System globally
-print("Initializing RAG System...")
-rag = RAGSystem()
-rag.initialize()
-print("RAG System Ready!")
-
-# 4. Define Data Models for Input and Output
+# 3. Define Data Models
 class QueryRequest(BaseModel):
     query: str
 
 class QueryResponse(BaseModel):
     answer: str
 
-# 5. Create the Health Check Route
+# 4. Create the Health Check Route
 @app.get("/health")
 async def health_check():
-    return {"status": "active", "database": rag.collection_name}
+    # Check if the RAG system is actually loaded yet
+    if hasattr(app.state, "rag"):
+        return {"status": "active", "database": app.state.rag.collection_name}
+    return {"status": "starting", "message": "Models are still loading..."}
 
-# 6. Create the Main Interaction Route
+# 5. Create the Main Interaction Route
 @app.post("/ask", response_model=QueryResponse)
 async def ask_agent(request: QueryRequest):
+    if not hasattr(app.state, "rag"):
+        raise HTTPException(status_code=503, detail="System is still initializing. Please try again in a minute.")
+    
     try:
-        # Fetch the LangGraph config (which includes your thread_id)
+        rag = app.state.rag
         config = rag.get_config()
         
         # Format the input for LangGraph
@@ -50,11 +71,10 @@ async def ask_agent(request: QueryRequest):
         # Invoke the agentic loop
         response = rag.agent_graph.invoke(inputs, config=config)
         
-        # Extract the final textual answer from the last message in the graph state
+        # Extract final textual answer
         final_answer = response["messages"][-1].content
         
         return QueryResponse(answer=final_answer)
 
     except Exception as e:
-        # Catch errors (like rate limits) and return a clean HTTP 500 error
         raise HTTPException(status_code=500, detail=str(e))
