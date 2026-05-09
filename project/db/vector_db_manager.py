@@ -1,70 +1,54 @@
 import os
 import config
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_qdrant import QdrantVectorStore, FastEmbedSparse, RetrievalMode
+from langchain_google_genai import GoogleGenerativeAIEmbeddings  # New Import
+from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 
 class VectorDbManager:
     __client: QdrantClient
-    __dense_embeddings: HuggingFaceEmbeddings
-    __sparse_embeddings: FastEmbedSparse
+    __dense_embeddings: GoogleGenerativeAIEmbeddings # Updated Type Hint
 
     def __init__(self):
-        # 1. Check for Cloud Environment Variables
         qdrant_url = os.getenv("QDRANT_URL")
         qdrant_api_key = os.getenv("QDRANT_API_KEY")
 
         if qdrant_url and qdrant_api_key:
-            # Connect to Qdrant Cloud
             print("Connecting to Qdrant Cloud...")
-            self.__client = QdrantClient(
-                url=qdrant_url, 
-                api_key=qdrant_api_key
-            )
+            self.__client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
         else:
-            # Fallback to Local Storage (using the path from your config)
             print(f"Connecting to Local Qdrant at: {config.QDRANT_DB_PATH}")
             self.__client = QdrantClient(path=config.QDRANT_DB_PATH)
 
-        self.__dense_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GOOGLE_API_KEY"))
+        # Offload embedding math to Google's API (Saves ~500MB RAM)
+        self.__dense_embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/embedding-001",
+            google_api_key=os.getenv("GOOGLE_API_KEY")
+        )
 
     def create_collection(self, collection_name):
         if not self.__client.collection_exists(collection_name):
             print(f"Creating collection: {collection_name}...")
             
-            # Hybrid search setup: Dense + Sparse
+            # Simplified to Dense-only to ensure stability on Free Tier
             self.__client.create_collection(
                 collection_name=collection_name,
                 vectors_config=qmodels.VectorParams(
-                    size=len(self.__dense_embeddings.embed_query("test")), 
+                    size=768, # Google embedding-001 size
                     distance=qmodels.Distance.COSINE
-                ),
-                sparse_vectors_config={
-                    config.SPARSE_VECTOR_NAME: qmodels.SparseVectorParams()
-                },
+                )
             )
             print(f"✓ Collection created: {collection_name}")
         else:
             print(f"✓ Collection already exists: {collection_name}")
 
-    def delete_collection(self, collection_name):
-        try:
-            if self.__client.collection_exists(collection_name):
-                print(f"Removing Qdrant collection: {collection_name}")
-                self.__client.delete_collection(collection_name)
-        except Exception as e:
-            print(f"Warning: could not delete collection {collection_name}: {e}")
-
     def get_collection(self, collection_name) -> QdrantVectorStore:
         try:
             return QdrantVectorStore(
-                    client=self.__client,
-                    collection_name=collection_name,
-                    embedding=self.__dense_embeddings,
-                    sparse_embedding=self.__sparse_embeddings,
-                    retrieval_mode=RetrievalMode.HYBRID,
-                    sparse_vector_name=config.SPARSE_VECTOR_NAME
-                )
+                client=self.__client,
+                collection_name=collection_name,
+                embedding=self.__dense_embeddings,
+                retrieval_mode=RetrievalMode.DENSE # Switched from HYBRID to DENSE
+            )
         except Exception as e:
             print(f"Unable to get collection {collection_name}: {e}")
