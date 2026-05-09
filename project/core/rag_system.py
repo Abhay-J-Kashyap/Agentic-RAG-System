@@ -28,7 +28,7 @@ class RAGSystem:
         llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
             temperature=0, # Keep at 0 for strict factual legal retrieval
-            google_api_key="AIzaSyADHYfGCPlhIPDNQo3VbaJLBY4cdezHemg", # Make sure you set this in your environment/ .env file!
+            google_api_key=os.getenv("GOOGLE_API_KEY"), # Make sure you set this in your environment/ .env file!
             streaming=True # UI Streaming remains fully supported!
         )
         
