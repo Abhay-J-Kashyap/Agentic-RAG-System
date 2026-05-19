@@ -17,7 +17,7 @@ Designed to run **entirely locally on consumer-grade hardware** (tested on Intel
 * **LLM Engine:** Qwen 2.5 (7B) Instruct (via LM Studio)
 * **Orchestration:** LangGraph / LangChain
 * **Vector Database:** Qdrant (Local)
-* **Embeddings:** `Gemini embeddings`
+* **Embeddings:** `all-mpnet-base-v2`
 * **Guardrail Model:** DeBERTa (CrossEncoder)
 * **Frontend:** Gradio
 
